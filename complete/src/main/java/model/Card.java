@@ -26,20 +26,20 @@ public class Card {
     }
 
     @Id
-    @Column(name = "\"ID\"")
+    @Column(name = "\"ID\"", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "\"FirstName\"")
+    @Column(name = "\"FirstName\"", nullable = false)
     private String firstName;  // Ime
 
-    @Column(name = "\"LastName\"")
+    @Column(name = "\"LastName\"", nullable = false)
     private String lastName;  // Prezime
 
-    @Column(name = "\"Identifier\"")
+    @Column(name = "\"Identifier\"", nullable = false)
     private String identifier;  // OIB
 
-    @Column(name = "\"Status\"")
+    @Column(name = "\"Status\"", nullable = false)
     private String status;  // Mogao bi biti i Boolean
 
     public Long  getId()

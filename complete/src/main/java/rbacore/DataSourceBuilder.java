@@ -36,6 +36,7 @@ import org.hibernate.query.sqm.tree.select.SqmSelectStatement;
 import org.hibernate.query.sqm.tree.update.SqmUpdateStatement;
 import org.hibernate.service.ServiceRegistry;
 import org.postgresql.ds.PGSimpleDataSource;
+import org.postgresql.jdbc.PgResultSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.env.Environment;
@@ -44,6 +45,7 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Constructor;
 import java.math.BigInteger;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
@@ -84,10 +86,13 @@ public class DataSourceBuilder {
     private Boolean createDataSource() {
 
         final PGSimpleDataSource dataSource = new PGSimpleDataSource();
+
+        final String databaseName = this.env.getProperty("spring.datasource.databasename");
+
         dataSource.setServerNames(new String[] { this.env.getProperty("spring.datasource.servername") });
         final String portnumber = this.env.getProperty("spring.datasource.portnumber");
         dataSource.setPortNumbers(new int[] { Integer.parseInt(portnumber == null ? "8080" : portnumber) });
-        dataSource.setDatabaseName(this.env.getProperty("spring.datasource.databasename"));
+//        dataSource.setDatabaseName(this.env.getProperty("spring.datasource.databasename"));
         dataSource.setUser(this.env.getProperty("spring.datasource.username"));
         dataSource.setPassword(this.env.getProperty("spring.datasource.password"));
 
@@ -95,8 +100,40 @@ public class DataSourceBuilder {
         {
             Connection conn = dataSource.getConnection();
 
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM \"User\"");
+            PreparedStatement stmt = conn
+                    .prepareStatement(String.format("select exists(SELECT datname FROM pg_catalog.pg_database WHERE datname = '%s')",databaseName));
             ResultSet rs = stmt.executeQuery();
+            Boolean dbExist = false;
+
+            while (rs.next()){
+                dbExist = ((PgResultSet) rs).getBoolean("exists");
+                if(dbExist) {
+                    break;
+                }
+            }
+
+            if(dbExist == false) {
+                stmt = conn.prepareStatement(String.format("CREATE DATABASE \"%s\"", databaseName));
+                stmt.executeUpdate();
+
+                dataSource.setDatabaseName(databaseName);
+                conn = dataSource.getConnection();
+
+                String sqlCreate =
+                        "CREATE TABLE public.\"Card\" (" +
+                        "\"ID\" int8 NOT NULL GENERATED ALWAYS AS IDENTITY," +
+                        "\"FirstName\" varchar NOT NULL," +
+                        "\"LastName\" varchar NOT NULL," +
+                        "\"Identifier\" varchar NOT NULL," +
+                        "\"Status\" int4 NOT NULL);";
+
+                stmt = conn.prepareStatement(sqlCreate);
+                stmt.executeUpdate();
+            }
+            else {
+                dataSource.setDatabaseName(databaseName);
+                conn = dataSource.getConnection();
+            }
 
         }
         catch (Exception ex)
