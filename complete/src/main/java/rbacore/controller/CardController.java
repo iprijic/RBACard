@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 //@Controller
@@ -124,18 +125,23 @@ public class CardController {
         String jsonItem;
         ObjectMapper mapper = new ObjectMapper();
         Object item = selected.get(0);
+        //session.close();
+
 
         try {
-            jsonItem = mapper.writeValueAsString(selected.get(0));
+            jsonItem = mapper.writeValueAsString(item);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+
+        Map<String, Object> map = mapper.convertValue(item, Map.class);
 
         File resultnewFile = createCardTemplateFile(id);
         if(resultnewFile != null) {
             try {
                 FileWriter myWriter = new FileWriter(resultnewFile);
-                myWriter.write(jsonItem);
+                String filePayload = (String)map.get("firstName") + ':' + (String)map.get("lastName") + ':' + (String)map.get("identifier") + ':' + ((int)map.get("status"));
+                myWriter.write(filePayload);
                 myWriter.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -147,6 +153,27 @@ public class CardController {
 
     @PostMapping("/person")
     public ResponseEntity person(@ModelAttribute("person")Card person) {
+
+        if(person.getFirstName().contains(":") || person.getLastName().contains(":") || person.getIdentifier().contains(":")) {
+            return new ResponseEntity("ERROR. Character \":\" is not allowed in input parameters", HttpStatus.BAD_REQUEST);
+        }
+
+        if(person.getIdentifier().length() == 11) {
+            for (char c : person.getIdentifier().toCharArray()) {
+                if(Character.isDigit(c) == false) {
+                    return new ResponseEntity("ERROR. OIB must contains only 11 numeric characters '0-9'", HttpStatus.BAD_REQUEST);
+                }
+            }
+        }
+        else {
+            return new ResponseEntity("ERROR. OIB is too short or long'", HttpStatus.BAD_REQUEST);
+        }
+
+        if(person.getStatus() != 0 && person.getStatus() != 1) {
+            return new ResponseEntity("ERROR. Improper status value. Must be 0 or 1", HttpStatus.BAD_REQUEST);
+        }
+
+
         Class<?> type = DataSourceBuilder.GetPersistType(sessionFactory, typeFromModel());
         Boolean persistResult = DataSourceBuilder.CreatePersistObject(sessionFactory.openSession(),type,
         new Class[] { Long.class,String.class,String.class,String.class,int.class },
