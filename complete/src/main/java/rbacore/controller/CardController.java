@@ -65,7 +65,7 @@ public class CardController {
 
 
      @DeleteMapping(value = "/person")
-    public  ResponseEntity delete(@RequestParam(value="id", required=true) long id) {
+    public  ResponseEntity delete(@RequestParam(value="oib", required=true) String id) {
 
          Session session = sessionFactory.openSession();
          session.getTransaction().begin();
@@ -73,7 +73,7 @@ public class CardController {
          Class<?> entityType = DataSourceBuilder.GetPersistType(sessionFactory,TypeFromModel());
          SqmDeleteStatement delete = cb.createCriteriaDelete(entityType);
          SqmRoot entity = (SqmRoot) delete.from(entityType);
-         delete.where(cb.equal(entity.get("id"), id));
+         delete.where(cb.equal(entity.get("identifier"), id));
          int result = session.createMutationQuery(delete).executeUpdate();
          session.getTransaction().commit();
          if(result > 0) {
