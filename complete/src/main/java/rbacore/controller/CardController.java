@@ -100,13 +100,7 @@ public class CardController {
     @Autowired
     private SessionFactory sessionFactory;
 
-    @GetMapping("/card")
-    public String card() {
-
-        return "greeting";
-    }
-
-    @GetMapping(value = "/person")
+    @GetMapping(value = "/person", produces="application/json")
     public  ResponseEntity person(@RequestParam(value="oib", required=true) String id) {
         Session session = sessionFactory.openSession();
         session.getTransaction().begin();
@@ -148,7 +142,7 @@ public class CardController {
             }
         }
 
-        return new ResponseEntity("The person was found in the database.The text card will be created.", HttpStatus.OK);
+        return new ResponseEntity(jsonItem, HttpStatus.OK);
     }
 
     @PostMapping("/person")
