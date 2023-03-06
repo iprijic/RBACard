@@ -7,15 +7,11 @@ import org.springframework.core.env.Environment;
 
 @Configuration
 public class PreInitConfig {
-
-    @Autowired
-    private Environment env;
-
-    public PreInitConfig() {
+    public PreInitConfig(Environment env) {
 
     }
 
-    @Bean
+   @Bean
     public DataSourceBuilder GetDataSourceBuilder(){
         return new DataSourceBuilder(null);
     }

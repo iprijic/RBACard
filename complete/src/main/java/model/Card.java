@@ -14,7 +14,7 @@ public class Card {
     {
 
     }
-    public Card attach(Long id,String firstName,String lastName,String identifier,String status)
+    public Card attach(Long id,String firstName,String lastName,String identifier,int status)
     {
         this.id = id;
         this.firstName = firstName;
@@ -22,7 +22,7 @@ public class Card {
         this.identifier = identifier;
         this.status = status;
 
-        return null;
+        return this;
     }
 
     @Id
@@ -40,7 +40,7 @@ public class Card {
     private String identifier;  // OIB
 
     @Column(name = "\"Status\"", nullable = false)
-    private String status;  // Mogao bi biti i Boolean
+    private int status;  // Mogao bi biti i Boolean
 
     public Long  getId()
     {
@@ -58,13 +58,29 @@ public class Card {
     {
         this.firstName = firstName;
     }
+    public String getLastName()
+    {
+        return lastName;
+    }
+    public void setLastName(String lastName)
+    {
+        this.lastName = lastName;
+    }
     public String getIdentifier()
     {
         return identifier;
     }
-    public void setIdentifier(String firstName)
+    public void setIdentifier(String identifier)
     {
         this.identifier = identifier;
+    }
+    public int getStatus()
+    {
+        return status;
+    }
+    public void setStatus(int status)
+    {
+        this.status = status;
     }
 
 }

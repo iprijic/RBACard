@@ -1,86 +1,41 @@
 package rbacore;
 
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.CriteriaUpdate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Selection;
 import jakarta.persistence.metamodel.EntityType;
-import jakarta.persistence.metamodel.Metamodel;
-
-import org.hibernate.*;
-import org.hibernate.boot.Metadata;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistry;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.internal.SessionImpl;
-import org.hibernate.loader.access.IdentifierLoadAccessImpl;
-import org.hibernate.loader.access.LoadAccessContext;
-import org.hibernate.metamodel.model.domain.EntityDomainType;
-import org.hibernate.metamodel.model.domain.JpaMetamodel;
-import org.hibernate.metamodel.model.domain.internal.JpaMetamodelImpl;
 import org.hibernate.metamodel.model.domain.internal.MappingMetamodelImpl;
-import org.hibernate.metamodel.spi.MappingMetamodelImplementor;
-import org.hibernate.metamodel.spi.MetamodelImplementor;
-import org.hibernate.persister.entity.EntityPersister;
-import org.hibernate.query.Query;
-import org.hibernate.query.criteria.HibernateCriteriaBuilder;
-import org.hibernate.query.criteria.JpaCriteriaQuery;
-import org.hibernate.query.criteria.JpaCriteriaUpdate;
-import org.hibernate.query.sqm.internal.SqmCriteriaNodeBuilder;
-import org.hibernate.query.sqm.tree.expression.SqmExpression;
-import org.hibernate.query.sqm.tree.expression.SqmParameter;
-import org.hibernate.query.sqm.tree.from.SqmRoot;
-import org.hibernate.query.sqm.tree.select.SqmSelectStatement;
-import org.hibernate.query.sqm.tree.update.SqmUpdateStatement;
-import org.hibernate.service.ServiceRegistry;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.postgresql.jdbc.PgResultSet;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Constructor;
-import java.math.BigInteger;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
+//@org.springframework.context.annotation.Configuration
 @Component
-@Scope("singleton")
 public class DataSourceBuilder {
-
-    /*
-    @Value("${spring.application.name}")
-    String applicationName;
-
-
-    @Autowired
-    private Environment env;
-
-    @Autowired
-    private Configurations config;
-    */
-
     private final Environment env;
 
     private SessionFactory sessionFactory;
 
     public DataSourceBuilder(Environment env) {
-        this.env = env;
 
-        if(createDataSource()) {
-           buildSessionFactory();
+        if(env != null) {
+            this.env = env;
+
+            if (createDataSource()) {
+                buildSessionFactory();
+            } else
+                this.sessionFactory = null;
         }
         else
-            this.sessionFactory = null;
+            this.env = null;
     }
 
     private Boolean createDataSource() {
@@ -161,93 +116,52 @@ public class DataSourceBuilder {
         props.put("hibernate.connection.password", this.env.getProperty("spring.datasource.password"));
         props.put("hibernate.current_session_context_class", "thread");
 
-
-
-        //Class<?> cls = user1.getClass();
-        Class<?> cls = User123.class;
+        Class<?> cls = TypeFromModel();
 
         sessionFactory = conf
                 .setProperties(props)
                 .addAnnotatedClass(cls)
                 .buildSessionFactory();
+        }
 
+    @Bean
+    public SessionFactory getSessionFactory()
+    {
+        return  sessionFactory;
+    }
 
+    private Class<?> TypeFromModel() {
+        return model.Card.class;
+    }
+
+    public static Class<?> GetPersistType(SessionFactory sessionFactory,Class<?> modelType) {
         MappingMetamodelImpl metaModel = (MappingMetamodelImpl) sessionFactory.getMetamodel();
-        EntityType<?> ent = metaModel.entity(cls.getName());
-        Class<?> c = ent.getJavaType();
+        EntityType<?> ent = metaModel.entity(modelType.getName());
+        return ent.getJavaType();
+    }
 
-        Session session = sessionFactory.openSession();
+    public static Boolean CreatePersistObject(Session session, Class<?> c, Class[] propTypes, Object[] propValues) {
 
-
-
-        User123 user1 = new User123();
-        user1.setId(2000L);
-        user1.setFirstName("Diana");
-
-        //Map<String, Object> p1 = session.getProperties();
-
-        //  session.save((Object)user1);
-
-
-        // session.persist(user1);
-        // session.getTransaction().commit();
-
-
-
-
-        SqmSelectStatement cq = (SqmSelectStatement) session.getCriteriaBuilder().createQuery(c);
-        SqmRoot rootEntry = (SqmRoot) cq.from(ent);
-        CriteriaQuery<?> all = cq.select(rootEntry);
-        TypedQuery<?> query = session.createQuery(all);
-        List<?> selected = query.getResultList();
-
-        //-------------
-
-        SqmUpdateStatement update = (SqmUpdateStatement) session.getCriteriaBuilder().createCriteriaUpdate(c);
-
-        SqmRoot e = (SqmRoot) update.from((Class<User123>) c);
-        update.set("firstName", "Marko Stanić");
-        update.where(session.getCriteriaBuilder().equal(e.get("id"), 4L));
-
-        session.getTransaction().begin();
-        int nRows = session.createQuery(update).executeUpdate();
-        session.getTransaction().commit();
-
-        //-------------
-
-
-//        User user2 = new User(3500,"Rose" );
-//        User user3 = new User(2500,"Denise" );
-//        User user4 = new User(4000,"Mike" );
-//        User user5 = new User(4500,"Linda" );
-
-//        SqmExpression<User> ev1 = session.getCriteriaBuilder().value(user1);
-
+        // Ne radi new NekiObjektizModela. Možda nešto ne valja sa transient/detached/persist objektima.
+        // Mora se ovako.
 
         try {
             session.getTransaction().begin();
             Object inst = c.getConstructor().newInstance();
             Object attached = inst
                     .getClass()
-                    .getMethod("attach",new Class[] { Long.class,String.class })
-                    .invoke(inst , new Object[]{ null,"Diana" });
+                    .getMethod("attach",propTypes)
+                    .invoke(inst , propValues);
 
             session.persist(attached);
             session.getTransaction().commit();
-            session.flush();
+            //session.flush();
+
+            return true;
         }
         catch (Exception ee)
         {
+            return false;
         }
-
-        int z = 0;
-        z++;
-
-
-}
-
-    public SessionFactory getSessionFactory()
-    {
-        return  sessionFactory;
     }
 }
