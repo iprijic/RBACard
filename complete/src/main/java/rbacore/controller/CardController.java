@@ -23,6 +23,7 @@ import rbacore.DataSourceBuilder;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -62,6 +63,31 @@ public class CardController {
         }
 
         return String.join("#",prefix, sdf.format(resultDate).toString().replace(':','-'));
+    }
+
+    // Postavi sve kartice u folderu da su nevažeće.
+    // U folderu može biti samo jedna aktivna kartica ili niti jedna za obrisanog korisnika.
+    private void invalidateCardTemplates(String prefix) {
+        File fileRoot = new File(getCardAssetsPath());
+        File[] files = fileRoot.listFiles();
+
+        for (File f : files) {
+            String id = f.getName().split("#")[0];
+
+            if(id.equals(prefix)) {
+
+                try {
+                    String oldContent = new String(Files.readAllBytes(Paths.get(f.getPath())));
+                    String newContent = oldContent.substring(0, oldContent.length() - 1) + "0";
+
+                    FileWriter myWriter = new FileWriter(f);
+                    myWriter.write(newContent);
+                    myWriter.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     private Class<?> typeFromModel() {
@@ -121,6 +147,8 @@ public class CardController {
         else if(selected.size() > 1) {
             return new ResponseEntity("Too many persons contains same identifier (OIB).", HttpStatus.BAD_REQUEST);
         }
+
+        invalidateCardTemplates(id); // Poništi sve ostale kartice status=0. Biti će izdana nova kartica status=1.
 
         String jsonItem;
         ObjectMapper mapper = new ObjectMapper();
@@ -204,6 +232,7 @@ public class CardController {
          int result = session.createMutationQuery(delete).executeUpdate();
          session.getTransaction().commit();
          if(result > 0) {
+             invalidateCardTemplates(id); // Poništi sve kartice u izdavanju za ovog korisnika zbog toga što je on izbrisan. status = 0
              return new ResponseEntity("Person is deleted successfully.", HttpStatus.OK);
          }
          else {
