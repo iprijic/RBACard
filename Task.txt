@@ -1,0 +1,65 @@
+Opis problema za rješavanje:
+Raiffeisen bank
+
+
+Banka izdaje fizičkim osobama kreditne kartice. 
+Osobe za to apliciraju banci. 
+
+Za potrebe te evidencije treba napraviti mini-aplikaciju kojom će se evidentirati osoba(O) ili više njih predstavljenih 
+
+Imenom, 
+Prezimenom, 
+OIB-om 
+i Statusom 
+za koje se treba izraditi kartica. Tip kartice nije bitan, već je samo jedan, tako da o tome ne trebaš razmišljati.
+
+
+Osobe se moraju zapisati permanentno,  a način izaberi sam po volji. Preferira se baza podataka (bilo koja, može i H2) ili datoteka.
+ 
+
+Kako bi proces za proizvodnju/tiskanje kreditnih kartica znao čiju/koju karticu napraviti, treba mu dati tekstualnu datoteku(D) sa strukturom:
+
+Ime, 
+Prezime, 
+OIB, 
+Status(delimiter izaberi sam, ne treba header).
+
+Napomena: 
+Proces proizvodnje kartica ovdje je zamišljen da bi dao neki smisao, ali njime se nećeš baviti, nego samo ažuriranjem osoba i generiranjem tekstualne datoteke koju bi zamišljeni 
+proces trebao čitati.
+
+ 
+
+Aplikacija treba omogućiti:
+
+
+- Upisivanje osobe(O) u skup osoba sa svim pripadajućim atributima(Ime, Prezime, OIB, Status),
+
+- Pretraživanje skupa osoba(O) prema OIBu(ručni upis korisnika) osobe za koju želimo generirati datoteku(D), i ako osoba(O) postoji, vratiti Ime, Prezime, OIB i Status za istu; 
+  Inače ne vrati ništa, a može biti i neki exception da se zna što se desilo.
+
+- Za pronađenu osobu(O) treba napraviti tekstualnu datoteku (D) sa svim popunjenim atributima(Ime, Prezime, OIB, Status).
+
+
+Jedna datoteka(D) treba sadržavati podatke samo za jednu osobu(O).
+
+U nazivu datoteke možeš koristiti OIB + timestamp, radi lakše provjere da li datoteka već postoji.
+
+Lokacija spremanja datoteke nije bitna, može i u working direktorij aplikacije.
+
+Osoba(O) se treba moći obrisati na zahtjev prema OIBu(ručni upis korisnika).
+
+
+Metode treba napraviti da rade kao RESTful.
+
+Bonus Feature I:    Probaj se poigrati sa poljima Status (tip polja izaberi sam) u osobi(O) i/ili datoteci (D) imajući na umu da se podrži sljedeće:
+
+•         Jedna osoba(O) može imati samo jednu aktivnu datoteku(D)
+
+•         Ako obrišeš osobu(O),  datoteka treba biti označena kao neaktivna
+
+
+
+Dovoljan je interface HTTP ili konzola, ili kako već odlučiš.
+
+Jezik je JAVA, a poželjno je korištenje frameworka, tipa spring boot i sl.
